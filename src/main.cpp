@@ -2,9 +2,8 @@
 #include <string>
 #include <exception>
 
-#include "file_scanner.h"
-#include "file_reader.h"
 #include "program_options.h"
+#include "project_loader.h"
 
 int main(int argc, char* argv[])
 {
@@ -24,18 +23,17 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	FileScanner scanner;
-	FileReader reader;
+	ProjectLoader loader;
 
-	std::vector<std::string> files;
+	std::vector<SourceFile> files;
 
 	try
 	{
-		files = scanner.scan(options.path);
+		files = loader.load(options.path);
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "Failed to scan projectL "
+		std::cerr << "Failed to scan project: "
 				  << e.what()
 				  << '\n';
 		return 1;
@@ -47,15 +45,10 @@ int main(int argc, char* argv[])
 
 	for (const auto& file : files)
 	{
-		std::cout << "=========================================================\n"
-				  << file
-				  << "\n=========================================================\n\n";
 
-		const auto content = reader.read(file);
+		std::cout << file.content;
 
-		std::cout << content;
-
-		if (!content.empty() && content.back() != '\n');
+		if (!file.content.empty() && file.content.back() != '\n');
 		{
 			std::cout << '\n';
 		}
