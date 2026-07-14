@@ -4,6 +4,7 @@
 
 #include "program_options.h"
 #include "project_loader.h"
+#include "code_chunker.h"
 
 int main(int argc, char* argv[])
 {
@@ -15,12 +16,13 @@ int main(int argc, char* argv[])
 	}
 	catch(const std::exception& e)
 	{
-		std::cerr << "Error: "
-				  << e.what()
-				  << '\n';
+		std::cerr
+			<< "Error: "
+			<< e.what()
+			<< '\n';
 		print_usage();
 		
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	ProjectLoader loader;
@@ -33,26 +35,31 @@ int main(int argc, char* argv[])
 	}
 	catch (const std::exception& e)
 	{
-		std::cerr << "Failed to scan project: "
-				  << e.what()
-				  << '\n';
-		return 1;
+		std::cerr
+			<< "Failed to scan project: "
+			<< e.what()
+			<< '\n';
+		return EXIT_FAILURE;
 	}
 
-	std::cout << "Found "
-			  << files.size()
-			  << " source files.\n\n";
+	std::cout
+		<< "Found "
+		<< files.size()
+		<< " source files.\n\n";
+
+	CodeChunker chunker;
 
 	for (const auto& file : files)
 	{
+		auto chunks = chunker.split(file);
 
-		std::cout << file.content;
+		std::cout
+			<< file.path
+			<< " -> chunks: "
+			<< chunks.size()
+			<< '\n';
 
-		if (!file.content.empty() && file.content.back() != '\n');
-		{
-			std::cout << '\n';
-		}
 	}
 
-	return 0;
+	return EXIT_SUCCESS;
 }

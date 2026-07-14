@@ -27,6 +27,7 @@ ProgramOptions parse_arguments(int argc, char* argv[])
 
 void print_usage()
 {
-	std::cout << "Usage: "
-			  << "agent --path <project>\n>";
+	std::cout
+		<< "Usage: "
+		<< "agent --path <project>\n>";
 }

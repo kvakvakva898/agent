@@ -32,9 +32,10 @@ std::vector<std::string> FileScanner::scan(const std::string& root) {
 	}
 	catch (const fs::filesystem_error& e)
 	{
-		std::cerr << "Filesystem error: "
-				  << e.what()
-				  << "\n";
+		std::cerr
+			<< "Filesystem error: "
+			<< e.what()
+			<< "\n";
 					
 	}
 	return files;
