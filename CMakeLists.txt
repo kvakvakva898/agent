@@ -12,7 +12,7 @@ endif()
 project ("agent")
 
 # Добавьте источник в исполняемый файл этого проекта.
-add_executable (agent  "src/main.cpp" "src/file_reader.cpp" "src/file_scanner.cpp" "src/program_options.cpp" "src/project_loader.cpp" "src/code_chunker.cpp")
+add_executable (agent  "src/main.cpp" "src/file_reader.cpp" "src/file_scanner.cpp" "src/program_options.cpp" "src/project_loader.cpp" "src/code_chunker.cpp" "src/prompt_builder.cpp" "include/prompt_builder.h")
 
 target_include_directories(agent PRIVATE include)
 

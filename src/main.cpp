@@ -5,6 +5,7 @@
 #include "program_options.h"
 #include "project_loader.h"
 #include "code_chunker.h"
+#include "prompt_builder.h"
 
 int main(int argc, char* argv[])
 {
@@ -49,6 +50,8 @@ int main(int argc, char* argv[])
 
 	CodeChunker chunker;
 
+	PromptBuilder builder;
+
 	for (const auto& file : files)
 	{
 		auto chunks = chunker.split(file);
@@ -58,6 +61,15 @@ int main(int argc, char* argv[])
 			<< " -> chunks: "
 			<< chunks.size()
 			<< '\n';
+
+		for (const auto& chunk : chunks)
+		{
+			auto prompt = builder.build(chunk);
+
+			std::cout
+				<< prompt
+				<< "\n\n";
+		}
 
 	}
 
