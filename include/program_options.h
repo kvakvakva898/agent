@@ -5,6 +5,12 @@
 struct ProgramOptions
 {
 	std::string path;
+
+	std::string endpoint =
+		"http://localhost:1234/v1/chat/completions";
+
+	std::string model =
+		"nvidia/nemotron-3-nano-4b";
 };
 
 ProgramOptions parse_arguments(int argc, char* argv[]);

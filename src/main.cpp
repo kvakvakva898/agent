@@ -6,6 +6,7 @@
 #include "project_loader.h"
 #include "code_chunker.h"
 #include "prompt_builder.h"
+#include "llm_client.h"
 
 int main(int argc, char* argv[])
 {
@@ -52,6 +53,11 @@ int main(int argc, char* argv[])
 
 	PromptBuilder builder;
 
+	LLMClient client(
+		options.endpoint,
+		options.model
+	);
+
 	for (const auto& file : files)
 	{
 		auto chunks = chunker.split(file);
@@ -67,8 +73,31 @@ int main(int argc, char* argv[])
 			auto prompt = builder.build(chunk);
 
 			std::cout
-				<< prompt
-				<< "\n\n";
+				<< "\n==================================\n"
+				<< "Analyzing: "
+				<< chunk.sourceFile
+				<< " chunk["
+				<< chunk.index
+				<< "]"
+				<< "\n==================================\n\n";
+
+			try
+			{
+				const auto response = client.chat(prompt);
+
+				std::cout
+					<< response
+					<< '\n';
+			}
+			catch (const std::exception& e)
+			{
+				std::cerr
+					<< "LLM request failed: "
+					<< e.what()
+					<< '\n';
+
+				return EXIT_FAILURE;
+			}
 		}
 
 	}
