@@ -7,6 +7,7 @@
 #include "code_chunker.h"
 #include "prompt_builder.h"
 #include "llm_client.h"
+#include "review_result_parser.h"
 
 int main(int argc, char* argv[])
 {
@@ -50,8 +51,8 @@ int main(int argc, char* argv[])
 		<< " source files.\n\n";
 
 	CodeChunker chunker;
-
 	PromptBuilder builder;
+	ReviewResultParser parser;
 
 	LLMClient client(
 		options.endpoint,
@@ -71,7 +72,7 @@ int main(int argc, char* argv[])
 		for (const auto& chunk : chunks)
 		{
 			auto prompt = builder.build(chunk);
-
+			
 			std::cout
 				<< "\n==================================\n"
 				<< "Analyzing: "
@@ -85,9 +86,55 @@ int main(int argc, char* argv[])
 			{
 				const auto response = client.chat(prompt);
 
-				std::cout
-					<< response
-					<< '\n';
+				try
+				{
+					const auto review = parser.parse(response);
+
+					std::cout
+						<< "Found issues: "
+						<< review.issues.size()
+						<< '\n';
+
+					for (const auto& issue : review.issues)
+					{
+						std::cout
+							<< '\n'
+							<< "["
+							<< issue.severity
+							<< "] "
+							<< issue.category
+							<< '\n';
+
+						std::cout
+							<< "Line: "
+							<< issue.line
+							<< '\n';
+
+						std::cout
+							<< "Description: "
+							<< issue.description
+							<< '\n';
+
+						std::cout
+							<< "Recomendation: "
+							<< issue.recommendation
+							<< '\n';
+					}
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr
+						<< "Failed to parse LLM response: "
+						<< e.what()
+						<< 'n';
+
+					std::cerr
+						<< "Raw response:\n"
+						<< response
+						<< 'n';
+
+					return EXIT_FAILURE;
+				}
 			}
 			catch (const std::exception& e)
 			{

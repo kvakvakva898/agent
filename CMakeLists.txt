@@ -24,7 +24,8 @@ add_executable (agent
 	src/project_loader.cpp
 	src/code_chunker.cpp
 	src/prompt_builder.cpp
-	src/llm_client.cpp)
+	src/llm_client.cpp
+	src/review_result_parser.cpp)
 
 target_include_directories(agent PRIVATE include)
 

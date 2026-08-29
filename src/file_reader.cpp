@@ -8,7 +8,7 @@ std::string FileReader::read(const std::string& path) {
 	std::ifstream file(path, std::ios::binary);
 
 	if (!file.is_open())
-		throw std::runtime_error("");
+		throw std::runtime_error("Error with file opening");
 
 	std::stringstream buff;
 
