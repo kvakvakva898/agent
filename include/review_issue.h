@@ -2,9 +2,11 @@
 
 #include <cstddef>
 #include <string>
+#include <filesystem>
 
 struct ReviewIssue
 {
+	std::filesystem::path source_file;
 	std::string severity;
 	std::string category;
 

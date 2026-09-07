@@ -26,7 +26,8 @@ add_executable (agent
 	src/prompt_builder.cpp
 	src/llm_client.cpp
 	src/review_result_parser.cpp
-	src/prompt_template_loader.cpp)
+	src/prompt_template_loader.cpp
+	src/code_review_agent.cpp)
 
 target_include_directories(agent PRIVATE include)
 

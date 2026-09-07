@@ -4,7 +4,7 @@
 
 namespace fs = std::filesystem;
 
-std::vector<std::string> FileScanner::scan(const std::string& root) {
+std::vector<std::string> FileScanner::scan(const std::filesystem::path& root) {
 	std::vector<std::string> files;
 
 	try

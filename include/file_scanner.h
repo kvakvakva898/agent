@@ -8,7 +8,7 @@ namespace fs = std::filesystem;
 
 class FileScanner {
 public:
-	std::vector<std::string> scan(const std::string& root);
+	std::vector<std::string> scan(const std::filesystem::path& root);
 
 private:
 	bool is_code_file(const fs::path& path);

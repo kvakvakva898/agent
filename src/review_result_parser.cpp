@@ -74,7 +74,7 @@ ReviewResult ReviewResultParser::parse(
 			item.value("description", "");
 
 		issue.recommendation =
-			item.value("recomendation", "");
+			item.value("recommendation", "");
 
 		result.issues.push_back(
 			std::move(issue)

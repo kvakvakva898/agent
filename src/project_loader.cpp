@@ -3,7 +3,7 @@
 #include "file_scanner.h"
 #include "file_reader.h"
 
-std::vector<SourceFile> ProjectLoader::load(const std::string& path)
+std::vector<SourceFile> ProjectLoader::load(const std::filesystem::path& path)
 {
 	FileScanner scanner;
 	FileReader reader;

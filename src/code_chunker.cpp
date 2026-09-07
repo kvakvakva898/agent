@@ -28,7 +28,7 @@ std::vector<CodeChunk> CodeChunker::split(const SourceFile& file)
 		{
 			CodeChunk chunk;
 
-			chunk.sourceFile = file.path;
+			chunk.source_file = file.path;
 			chunk.index = index++;
 			chunk.content = buff;
 			chunk.start_line = start_line;
@@ -47,7 +47,7 @@ std::vector<CodeChunk> CodeChunker::split(const SourceFile& file)
 	{
 		CodeChunk chunk;
 
-		chunk.sourceFile = file.path;
+		chunk.source_file = file.path;
 		chunk.index = index++;
 		chunk.content = buff;
 		chunk.start_line = start_line;

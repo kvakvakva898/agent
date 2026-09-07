@@ -5,7 +5,7 @@
 
 struct CodeChunk
 {
-	std::filesystem::path sourceFile;
+	std::filesystem::path source_file;
 
 	size_t index = 0;
 

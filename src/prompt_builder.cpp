@@ -39,7 +39,7 @@ std::string PromptBuilder::build(
 	replace(
 		prompt,
 		"{{SOURCE_FILE}}",
-		chunk.sourceFile.string()
+		chunk.source_file.string()
 	);
 
 	replace(

@@ -3,12 +3,7 @@
 #include <exception>
 
 #include "program_options.h"
-#include "project_loader.h"
-#include "code_chunker.h"
-#include "prompt_builder.h"
-#include "llm_client.h"
-#include "review_result_parser.h"
-#include "prompt_template_loader.h"
+#include "code_review_agent.h"
 
 int main(int argc, char* argv[])
 {
@@ -28,143 +23,56 @@ int main(int argc, char* argv[])
 		
 		return EXIT_FAILURE;
 	}
-
-	ProjectLoader loader;
-
-	std::vector<SourceFile> files;
-
+	
+	CodeReviewAgent agent(options, "prompts/code_review1.txt");
 	try
 	{
-		files = loader.load(options.path);
+		const auto issues = agent.analyze(options.path);
+
+		for (const auto& issue : issues)
+		{
+			std::cout
+				<< '\n'
+				<< "["
+				<< issue.severity
+				<< "] "
+				<< issue.category
+				<< '\n';
+
+			std::cout
+				<< "source file: "
+				<< issue.source_file
+				<< '\n';
+
+			std::cout
+				<< "line: "
+				<< issue.line
+				<< '\n';
+
+			std::cout
+				<< "confidence: "
+				<< issue.confidence
+				<< '\n';
+
+			std::cout
+				<< "description: "
+				<< issue.description
+				<< '\n';
+
+			std::cout
+				<< "recommendation: "
+				<< issue.recommendation
+				<< '\n';
+		}
 	}
 	catch (const std::exception& e)
 	{
 		std::cerr
-			<< "Failed to scan project: "
+			<< "Error: "
 			<< e.what()
 			<< '\n';
+
 		return EXIT_FAILURE;
 	}
-
-	std::cout
-		<< "Found "
-		<< files.size()
-		<< " source files.\n\n";
-
-	CodeChunker chunker;
-	ReviewResultParser parser;
-	PromptTemplateLoader template_loader;
-
-	const auto prompt_template =
-		template_loader.load(
-			"prompts/code_review1.txt"
-		);
-
-	PromptBuilder builder(
-		prompt_template);
-	
-
-	LLMClient client(
-		options.endpoint,
-		options.model
-	);
-
-	for (const auto& file : files)
-	{	
-		auto chunks = chunker.split(file);
-
-		std::cout
-			<< file.path
-			<< " -> chunks: "
-			<< chunks.size()
-			<< '\n';
-
-		for (const auto& chunk : chunks)
-		{
-			auto prompt = builder.build(chunk);
-			
-			std::cout
-				<< "\n==================================\n"
-				<< "Analyzing: "
-				<< chunk.sourceFile
-				<< " chunk["
-				<< chunk.index
-				<< "]"
-				<< "\n==================================\n\n";
-
-			try
-			{
-				std::cout << prompt << '\n';
-
-				const auto response = client.chat(prompt);
-
-				try
-				{
-					const auto review = parser.parse(response);
-
-					std::cout
-						<< "Found issues: "
-						<< review.issues.size()
-						<< '\n';
-
-					for (const auto& issue : review.issues)
-					{
-						std::cout
-							<< '\n'
-							<< "["
-							<< issue.severity
-							<< "] "
-							<< issue.category
-							<< '\n';
-
-						std::cout
-							<< "Line: "
-							<< issue.line
-							<< '\n';
-
-						std::cout
-							<< "Confidence: "
-							<< issue.confidence
-							<< '\n';
-
-						std::cout
-							<< "Description: "
-							<< issue.description
-							<< '\n';
-
-						std::cout
-							<< "Recommendation: "
-							<< issue.recommendation
-							<< '\n';
-					}
-				}
-				catch (const std::exception& e)
-				{
-					std::cerr
-						<< "Failed to parse LLM response: "
-						<< e.what()
-						<< 'n';
-
-					std::cerr
-						<< "Raw response:\n"
-						<< response
-						<< '\n';
-
-					return EXIT_FAILURE;
-				}
-			}
-			catch (const std::exception& e)
-			{
-				std::cerr
-					<< "LLM request failed: "
-					<< e.what()
-					<< '\n';
-
-				return EXIT_FAILURE;
-			}
-		}
-
-	}
-
 	return EXIT_SUCCESS;
 }
