@@ -107,7 +107,7 @@ std::string LLMClient::chat(
 	curl_easy_setopt(
 		curl,
 		CURLOPT_TIMEOUT,
-		120L
+		500L
 	);
 
 	const CURLcode result =

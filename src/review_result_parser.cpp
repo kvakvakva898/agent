@@ -7,8 +7,7 @@
 using json = nlohmann::json;
 
 ReviewResult ReviewResultParser::parse(
-	const std::string& response
-)
+	const std::string& response)
 {
 	json data;
 
@@ -59,6 +58,17 @@ ReviewResult ReviewResultParser::parse(
 
 		issue.line =
 			item.value("line", 0);
+
+		issue.confidence =
+			item.value("confidence", 0.0);
+
+		if (issue.confidence < 0.0 || 
+			issue.confidence > 1.0)
+		{
+			throw std::runtime_error(
+				"Issue confidence must be between 0.0 and 1.0"
+			);
+		}
 
 		issue.description =
 			item.value("description", "");

@@ -8,6 +8,7 @@
 #include "prompt_builder.h"
 #include "llm_client.h"
 #include "review_result_parser.h"
+#include "prompt_template_loader.h"
 
 int main(int argc, char* argv[])
 {
@@ -51,8 +52,17 @@ int main(int argc, char* argv[])
 		<< " source files.\n\n";
 
 	CodeChunker chunker;
-	PromptBuilder builder;
 	ReviewResultParser parser;
+	PromptTemplateLoader template_loader;
+
+	const auto prompt_template =
+		template_loader.load(
+			"prompts/code_review1.txt"
+		);
+
+	PromptBuilder builder(
+		prompt_template);
+	
 
 	LLMClient client(
 		options.endpoint,
@@ -60,7 +70,7 @@ int main(int argc, char* argv[])
 	);
 
 	for (const auto& file : files)
-	{
+	{	
 		auto chunks = chunker.split(file);
 
 		std::cout
@@ -84,6 +94,8 @@ int main(int argc, char* argv[])
 
 			try
 			{
+				std::cout << prompt << '\n';
+
 				const auto response = client.chat(prompt);
 
 				try
@@ -111,12 +123,17 @@ int main(int argc, char* argv[])
 							<< '\n';
 
 						std::cout
+							<< "Confidence: "
+							<< issue.confidence
+							<< '\n';
+
+						std::cout
 							<< "Description: "
 							<< issue.description
 							<< '\n';
 
 						std::cout
-							<< "Recomendation: "
+							<< "Recommendation: "
 							<< issue.recommendation
 							<< '\n';
 					}
@@ -131,7 +148,7 @@ int main(int argc, char* argv[])
 					std::cerr
 						<< "Raw response:\n"
 						<< response
-						<< 'n';
+						<< '\n';
 
 					return EXIT_FAILURE;
 				}

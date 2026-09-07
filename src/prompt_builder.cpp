@@ -1,68 +1,65 @@
 #include "prompt_builder.h"
 
-std::string PromptBuilder::build(
-	const CodeChunk& chunk
-)
+namespace
 {
-	std::string prompt;
+	void replace(
+		std::string& text,
+		const std::string& placeholder,
+		const std::string& value)
+	{
+		size_t position = 0;
 
-	prompt +=
-		"You are a senior C++ code reviewer.\n\n";
+		while (
+			(position = text.find(
+				placeholder,
+				position
+			)) != std::string::npos)
+		{
+			text.replace(
+				position,
+				placeholder.length(),
+				value
+			);
 
-	prompt +=
-		"Analyze the provided C++ source code and identify "
-		"real and actionable problems.\n\n";
+			position += value.length();
+		}
+	}
+}
 
-	prompt +=
-		"Look for:\n"
-		"- bugs\n"
-		"- memory safety issues\n"
-		"- undefined behavior\n"
-		"- performance problems\n"
-		"- concurrency issues\n"
-		"- incorrect resource management\n"
-		"- serious maintainability problems\n";
+PromptBuilder::PromptBuilder(
+	std::string prompt_template)
+	: prompt_template_(std::move(prompt_template))
+	{}
 
-	prompt +=
-		"Do not report harmless stylistic preferences.\n";
+std::string PromptBuilder::build(
+	const CodeChunk& chunk) const
+{
+	std::string prompt = prompt_template_;
 
-	prompt +=
-		"Do not invent problems that are not supported by the code.\n";
+	replace(
+		prompt,
+		"{{SOURCE_FILE}}",
+		chunk.sourceFile.string()
+	);
 
-	prompt +=
-		"Return only valid JSON.\n";
+	replace(
+		prompt,
+		"{{CHUNK_INDEX}}",
+		std::to_string(chunk.index)
+	);
 
-	prompt +=
-		"The JSON must have exactly this structure.\n";
+	replace(
+		prompt,
+		"{{START_LINE}}",
+		std::to_string(chunk.start_line)
+	);
 
-	prompt +=
-		"{\n"
-		"	\"issues\": [\n"
-		"		{\n"
-		"			\"severity\": \"high|medium|low\",\n"
-		"			\"category\": \"bug|memory|perfomance|concurrency|resource|maintainability\",\n"
-		"			\"line\": 0,\n"
-		"			\"description\": \"...\",\n"
-		"			\"recommendation\": \"...\"\n"
-		"		}\n"
-		"	]\n"
-		"}\n\n";
-
-	prompt +=
-		"If there are no issues, return:\n\n";
-
-	prompt +=
-		"{ \"issues\": [] }\n\n";
-
-	prompt +=
-		"File: "
-		+ chunk.sourceFile.string()
-		+ "\n";
-
-	prompt +=
-		"Code:\n";
-
-	prompt += chunk.content;
+	replace(
+		prompt,
+		"{{SOURCE_CODE}}",
+		chunk.content
+	);
+	
 
 	return prompt;
 }

@@ -7,7 +7,7 @@ struct ProgramOptions
 	std::string path;
 
 	std::string endpoint =
-		"http://10.66.0.115:1234/v1/chat/completions";
+		"http://10.66.0.222:1234/v1/chat/completions";
 
 	std::string model =
 		"nvidia/nemotron-3-nano-4b";

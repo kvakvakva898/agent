@@ -10,6 +10,8 @@ struct ReviewIssue
 
 	std::size_t line = 0;
 
+	double confidence = 0.0;
+
 	std::string description;
 	std::string recommendation;
 };
