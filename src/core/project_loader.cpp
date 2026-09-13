@@ -1,7 +1,7 @@
-#include "project_loader.h"
+#include "core/project_loader.h"
 
-#include "file_scanner.h"
-#include "file_reader.h"
+#include "core/file_scanner.h"
+#include "core/file_reader.h"
 
 std::vector<SourceFile> ProjectLoader::load(const std::filesystem::path& path)
 {

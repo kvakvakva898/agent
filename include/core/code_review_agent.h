@@ -3,20 +3,21 @@
 #include <filesystem>
 #include <vector>
 
-#include "project_loader.h"
-#include "code_chunker.h"
-#include "prompt_builder.h"
-#include "llm_client.h"
-#include "review_result_parser.h"
-#include "prompt_template_loader.h"
-#include "program_options.h"
+#include "core/project_loader.h"
+#include "core/code_chunker.h"
+#include "core/prompt_builder.h"
+#include "core/llm_client.h"
+#include "core/review_result_parser.h"
+#include "core/prompt_template_loader.h"
+	
 
 class CodeReviewAgent
 {
 public:
 
 	explicit CodeReviewAgent(
-		const ProgramOptions& options,
+		const std::string& endpoint,
+		const std::string& model,
 		const std::filesystem::path& prompt_template_path
 	);
 

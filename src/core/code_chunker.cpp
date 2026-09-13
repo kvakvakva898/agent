@@ -1,4 +1,4 @@
-#include "code_chunker.h"
+#include "core/code_chunker.h"
 
 #include <sstream>
 

@@ -1,4 +1,4 @@
-#include "llm_client.h"
+#include "core/llm_client.h"
 
 #include <curl/curl.h>
 
@@ -26,8 +26,8 @@ static size_t write_callback(
 }
 
 LLMClient::LLMClient(
-	std::string endpoint,
-	std::string model) :
+	const std::string endpoint,
+	const std::string model) :
 	endpoint_(std::move(endpoint)),
 	model_(std::move(model))
 {}

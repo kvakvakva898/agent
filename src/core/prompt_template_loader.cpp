@@ -1,8 +1,9 @@
-#include "prompt_template_loader.h"
+#include "core/prompt_template_loader.h"
 
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 
 std::string PromptTemplateLoader::load(
 	const std::filesystem::path& path

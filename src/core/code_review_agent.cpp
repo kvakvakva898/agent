@@ -1,16 +1,17 @@
-#include "code_review_agent.h"
+#include "core/code_review_agent.h"
 
 #include <iostream>
 #include <stdexcept>
 
 CodeReviewAgent::CodeReviewAgent(
-	const ProgramOptions& options,
+	const std::string& endpoint,
+	const std::string& model,
 	const std::filesystem::path& prompt_template_path)
 	: prompt_builder_(
 		PromptTemplateLoader{}.load(prompt_template_path)),
 	  llm_client_(
-		  options.endpoint,
-		  options.model)
+		  endpoint,
+		  model)
 {
 }
 
@@ -88,7 +89,7 @@ std::vector<ReviewIssue> CodeReviewAgent::analyze(
 					std::cerr
 						<< "Failed to parse LLM response: "
 						<< e.what()
-						<< 'n';
+						<< '\n';
 				}
 			}
 			catch (const std::exception& e)

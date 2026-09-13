@@ -1,13 +1,14 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
 
 class LLMClient
 {
 public:
 	LLMClient(
-		std::string endpoint,
-		std::string model
+		const std::string endpoint,
+		const std::string model
 	);
 	
 	std::string chat(
@@ -15,6 +16,6 @@ public:
 	);
 
 private:
-	std::string endpoint_;
+	const std::string endpoint_;
 	std::string model_;
 };

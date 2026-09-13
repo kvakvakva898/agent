@@ -7,6 +7,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
+
 # Включение горячей перезагрузки для компиляторов MSVC, если поддерживается.
 if (POLICY CMP0141)
   cmake_policy(SET CMP0141 NEW)
@@ -15,28 +19,72 @@ endif()
 
 project (agent LANGUAGES CXX)
 
-# Добавьте источник в исполняемый файл этого проекта.
-add_executable (agent  
-	src/main.cpp
-	src/file_reader.cpp
-	src/file_scanner.cpp
-	src/program_options.cpp
-	src/project_loader.cpp
-	src/code_chunker.cpp
-	src/prompt_builder.cpp
-	src/llm_client.cpp
-	src/review_result_parser.cpp
-	src/prompt_template_loader.cpp
-	src/code_review_agent.cpp)
-
-target_include_directories(agent PRIVATE include)
-
 find_package(CURL REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(Qt6 REQUIRED COMPONENTS Widgets)
 
-target_link_libraries(agent
-	PRIVATE
+add_library(
+	agent_core
+	STATIC
+
+	src/core/file_reader.cpp
+	src/core/file_scanner.cpp
+	src/core/project_loader.cpp
+
+	src/core/code_chunker.cpp
+
+	src/core/prompt_builder.cpp
+	src/core/prompt_template_loader.cpp
+
+	src/core/llm_client.cpp
+	src/core/review_result_parser.cpp
+	src/core/code_review_agent.cpp
+)
+
+target_include_directories(
+	agent_core
+	PUBLIC
+	include
+)
+
+target_link_libraries(
+	agent_core
+	PUBLIC
 		CURL::libcurl
-		nlohmann_json::nlohmann_json)
+		nlohmann_json::nlohmann_json
+)
 
-# TODO: Добавьте тесты и целевые объекты, если это необходимо.
+add_executable (
+	agent-cli
+
+	src/cli/main.cpp
+	src/cli/program_options.h
+	src/cli/program_options.cpp
+	)
+
+target_include_directories(
+	agent-cli
+	PRIVATE
+	/src/cli
+)
+
+target_link_libraries(
+	agent-cli
+	PRIVATE
+		agent_core
+)
+
+add_executable(
+	agent-gui
+
+	src/gui/main.cpp
+	src/gui/main_window.h
+	src/gui/main_window.cpp
+)
+
+target_link_libraries(
+	agent-gui
+	PRIVATE
+		agent_core
+		Qt6::Widgets
+)

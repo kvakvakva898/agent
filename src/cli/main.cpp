@@ -3,7 +3,7 @@
 #include <exception>
 
 #include "program_options.h"
-#include "code_review_agent.h"
+#include "core/code_review_agent.h"
 
 int main(int argc, char* argv[])
 {
@@ -23,8 +23,9 @@ int main(int argc, char* argv[])
 		
 		return EXIT_FAILURE;
 	}
-	
-	CodeReviewAgent agent(options, "prompts/code_review1.txt");
+
+	CodeReviewAgent agent(options.endpoint, options.model, "prompts/code_review.txt");
+
 	try
 	{
 		const auto issues = agent.analyze(options.path);

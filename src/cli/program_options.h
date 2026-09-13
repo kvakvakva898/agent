@@ -1,10 +1,11 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
 
 struct ProgramOptions
 {
-	std::string path;
+	std::filesystem::path path;
 
 	std::string endpoint =
 		"http://10.66.0.115:1234/v1/chat/completions";

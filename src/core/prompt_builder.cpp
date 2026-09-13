@@ -1,4 +1,4 @@
-#include "prompt_builder.h"
+#include "core/prompt_builder.h"
 
 namespace
 {

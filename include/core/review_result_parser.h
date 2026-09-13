@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include <review_result.h>
+#include <core/review_result.h>
 
 class ReviewResultParser
 {
