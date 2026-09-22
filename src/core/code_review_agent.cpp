@@ -4,14 +4,12 @@
 #include <stdexcept>
 
 CodeReviewAgent::CodeReviewAgent(
-	const std::string& endpoint,
-	const std::string& model,
-	const std::filesystem::path& prompt_template_path)
+	const AgentConfig& config)
 	: prompt_builder_(
-		PromptTemplateLoader{}.load(prompt_template_path)),
+		PromptTemplateLoader{}.load(config.prompt_template_path)),
 	  llm_client_(
-		  endpoint,
-		  model)
+		  config.endpoint,
+		  config.model)
 {
 }
 

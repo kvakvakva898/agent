@@ -1,6 +1,7 @@
 #include <QApplication>
 
 #include "main_window.h"
+#include <core/agent_config.h>
 
 int main(
 	int argc,
@@ -9,11 +10,22 @@ int main(
 	QApplication app(
 		argc,
 		argv);
+	AgentConfig config;
 
-	MainWindow window(
-		"http://10.153.92.115:1234/v1/chat/completions",
-		"nvidia/nemotron-3-nano-4b",
-		"prompts/code_review.txt");
+	config.endpoint 
+		= "http://10.153.92.115:1234/v1/chat/completions";
+
+	config.model 
+		= "nvidia/nemotron-3-nano-4b";
+
+	config.prompt_template_path 
+		= "prompts/code_review.txt";
+
+	qRegisterMetaType<
+		std::vector<ReviewIssue>>(
+			"std::vector<ReviewIssue>");
+
+	MainWindow window(config);
 
 	window.show();
 

@@ -9,21 +9,17 @@
 #include "core/llm_client.h"
 #include "core/review_result_parser.h"
 #include "core/prompt_template_loader.h"
-	
+#include "agent_config.h"
 
 class CodeReviewAgent
 {
 public:
 
 	explicit CodeReviewAgent(
-		const std::string& endpoint,
-		const std::string& model,
-		const std::filesystem::path& prompt_template_path
-	);
+		const AgentConfig& config);
 
 	std::vector<ReviewIssue> analyze(
-		const std::filesystem::path& project_path
-	);
+		const std::filesystem::path& project_path);
 
 private:
 

@@ -1,6 +1,8 @@
 #include "main_window.h"
 
 #include "core/code_review_agent.h"
+#include "core/agent_config.h"
+#include "review_worker.h"
 
 #include <QFileDialog>
 #include <QHeaderView>
@@ -13,46 +15,51 @@
 #include <QTextEdit>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QThread>
 
 #include <filesystem>
 #include <sstream>
 #include <thread>
 
 MainWindow::MainWindow(
-	const std::string& endpoint,
-	const std::string& model,
-	const std::filesystem::path& prompt_template_path,
+	AgentConfig config,
 	QWidget* parent):
 	QMainWindow(parent),
-	endpoint_(endpoint),
-	prompt_template_path_(prompt_template_path),
-	model_(model)
+	config_(std::move(config))
 {
 	setWindowTitle("Code Review Agent");
 	resize(1100, 700);
 
 	auto* central_widget =
-		new QWidget(this);
+		new QWidget(
+			this);
 
-	setCentralWidget(central_widget);
+	setCentralWidget(
+		central_widget);
 
 	auto* main_layout =
-		new QVBoxLayout(central_widget);
+		new QVBoxLayout(
+			central_widget);
 
 	auto* project_layout =
 		new QHBoxLayout();
 
 	project_path_edit_ =
-		new QLineEdit(this);
+		new QLineEdit(
+			this);
 
 	project_path_edit_->setPlaceholderText(
 		"Select C++ project directory");
 
 	browse_button_ =
-		new QPushButton("Browse...", this);
+		new QPushButton(
+			"Browse...",
+			this);
 
 	analyze_button_ =
-		new QPushButton("Analyze project", this);
+		new QPushButton(
+			"Analyze project",
+			this);
 
 	project_layout->addWidget(
 		project_path_edit_);
@@ -67,7 +74,8 @@ MainWindow::MainWindow(
 		project_layout);
 
 	issues_table_ =
-		new QTableWidget(this);
+		new QTableWidget(
+			this);
 
 	issues_table_->setColumnCount(5);
 
@@ -151,6 +159,8 @@ void MainWindow::browseProject()
 
 void MainWindow::analyzeProject()
 {
+	if (review_thread_ && review_thread_->isRunning())
+		return;
 
 	const QString path =
 		project_path_edit_->text().trimmed();
@@ -172,40 +182,106 @@ void MainWindow::analyzeProject()
 	status_label_->setText(
 		"Analyzing project...");
 
-	try
-	{
-		CodeReviewAgent agent(
-			endpoint_,
-			model_,
-			prompt_template_path_);
+	review_thread_ =
+		new QThread(this);
 
-		issues_ =
-			agent.analyze(
-				std::filesystem::path(
-					path.toStdWString()));
+	review_worker_ =
+		new ReviewWorker(
+			config_,
+			path);
 
-		displayIssues();
+	review_worker_->moveToThread(
+		review_thread_);
 
-		status_label_->setText(
-			QString("Analysis complete. Found %1 issues.")
-				.arg(
-					static_cast<int>(
-						issues_.size())));
-	}
-	catch (const std::runtime_error& e)
-	{
-		QMessageBox::critical(
-			this,
-			"Analysis failed",
-			QString::fromUtf8(e.what()));
+	connect(
+		review_thread_,
+		&QThread::started,
+		review_worker_,
+		&ReviewWorker::process);
 
-		status_label_->setText(
-			"Analysis failed.");
-	}
+	connect(
+		review_worker_,
+		&ReviewWorker::progress,
+		this,
+		[this](const QString& message)
+		{
+			status_label_->setText(message);
+		});
 
-	analyze_button_->setEnabled(true);
+	connect(
+		review_worker_,
+		&ReviewWorker::finished,
+		this,
+		&MainWindow::onAnalysisFinished);
 
-	browse_button_->setEnabled(true);
+	connect(
+		review_worker_,
+		&ReviewWorker::error,
+		this,
+		&MainWindow::onAnalysisError);
+
+	connect(
+		review_worker_,
+		&ReviewWorker::finished,
+		review_thread_,
+		&QThread::quit);
+
+	connect(
+		review_worker_,
+		&ReviewWorker::error,
+		review_thread_,
+		&QThread::quit);
+
+	connect(
+		review_thread_,
+		&QThread::finished,
+		review_worker_,
+		&QObject::deleteLater);
+
+	connect(
+		review_thread_,
+		&QThread::finished,
+		review_thread_,
+		&QObject::deleteLater);
+
+	connect(
+		review_thread_,
+		&QThread::finished,
+		this,
+		[this]()
+		{
+			review_thread_ = nullptr;
+			review_worker_ = nullptr;
+
+			analyze_button_->setEnabled(true);
+			browse_button_->setEnabled(true);
+		});
+
+	review_thread_->start();
+}
+
+void MainWindow::onAnalysisFinished(
+	const std::vector<ReviewIssue>& issues)
+{
+	issues_ = issues;
+
+	displayIssues();
+
+	status_label_->setText(
+		QString("Analysis complete. Found %1 issues")
+			.arg(issues.size()));
+}
+
+void MainWindow::onAnalysisError(
+	const QString& message)
+{
+	status_label_->setText(
+		"Analysis failed.");
+
+	QMessageBox::critical(
+		this,
+		"Analysis failed",
+		message);
 }
 
 void MainWindow::displayIssues()

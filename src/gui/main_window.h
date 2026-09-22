@@ -6,12 +6,15 @@
 #include <vector>
 
 #include "core/review_issue.h"
+#include "core/agent_config.h"
 
 class QLineEdit;
 class QPushButton;
 class QTableWidget;
 class QTextEdit;
 class QLabel;
+class QThread;
+class ReviewWorker;
 
 class MainWindow : public QMainWindow
 {
@@ -19,15 +22,19 @@ class MainWindow : public QMainWindow
 
 public:
 	MainWindow(
-		const std::string& endpoint,
-		const std::string& model,
-		const std::filesystem::path& prompt_template_path,
+		AgentConfig config,
 		QWidget* parent = nullptr);
 
-private:
+private slots:
 	void browseProject();
 	void analyzeProject();
 	void showSelectedIssue();
+
+	void onAnalysisFinished(
+		const std::vector <ReviewIssue>& issues);
+
+	void onAnalysisError(
+		const QString& message);
 
 private:
 	void displayIssues();
@@ -37,9 +44,7 @@ private:
 	);
 
 private:
-	std::string endpoint_;
-	std::string model_;
-	std::filesystem::path prompt_template_path_;
+	AgentConfig config_;
 
 	std::vector<ReviewIssue> issues_;
 
@@ -51,4 +56,7 @@ private:
 	QTextEdit* details_edit_;
 
 	QLabel* status_label_;
+
+	QThread* review_thread_ = nullptr;
+	ReviewWorker* review_worker_ = nullptr;
 };
