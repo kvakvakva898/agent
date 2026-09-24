@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <vector>
+#include <functional>
 
 #include "core/project_loader.h"
 #include "core/code_chunker.h"
@@ -19,7 +20,9 @@ public:
 		const AgentConfig& config);
 
 	std::vector<ReviewIssue> analyze(
-		const std::filesystem::path& project_path);
+		const std::filesystem::path& project_path,
+		std::function<void(const std::string&)> progress = {},
+		const std::atomic_bool* cancel_requested = nullptr);
 
 private:
 

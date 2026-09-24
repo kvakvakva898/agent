@@ -7,6 +7,9 @@ namespace
 		const std::string& placeholder,
 		const std::string& value)
 	{
+		if (placeholder.empty())
+			return;
+
 		size_t position = 0;
 
 		while (

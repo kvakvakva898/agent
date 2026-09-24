@@ -13,7 +13,7 @@ int main(
 	AgentConfig config;
 
 	config.endpoint 
-		= "http://10.153.92.115:1234/v1/chat/completions";
+		= "http://10.108.91.115:1234/v1/chat/completions";
 
 	config.model 
 		= "nvidia/nemotron-3-nano-4b";

@@ -17,19 +17,29 @@ void ReviewWorker::process()
 {
 	try
 	{
-		emit progress(
-			"Starting project analysis...");
+		emit progress("Starting project analysis...");
 
 		CodeReviewAgent agent(
 			config_);
 
-		emit progress(
-			"Analyzing project...");
-
 		const auto issues =
 			agent.analyze(
 				std::filesystem::path(
-					project_path_.toStdWString()));
+					project_path_.toStdWString()),
+				[this](const std::string& message)
+				{
+					emit progress(
+						QString::fromStdString(message)
+					);
+				},
+				&calcel_requested_);
+
+		if (calcel_requested_.load(
+			std::memory_order_relaxed))
+		{
+			emit cancelled();
+			return;
+		}
 
 		emit progress(
 			"Analysis finished.");
@@ -47,4 +57,14 @@ void ReviewWorker::process()
 		emit error(
 			"Unknown error occurred.");
 	}
+}
+
+void ReviewWorker::cancel()
+{
+	calcel_requested_.store(
+		true,
+		std::memory_order_relaxed);
+
+	emit progress(
+		"Stopping analysis...");
 }

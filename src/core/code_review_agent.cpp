@@ -15,8 +15,22 @@ CodeReviewAgent::CodeReviewAgent(
 
 
 std::vector<ReviewIssue> CodeReviewAgent::analyze(
-	const std::filesystem::path& project_path)
+	const std::filesystem::path& project_path,
+	std::function<void(const std::string&)> progress,
+	const std::atomic_bool* cancel_requested)
 {
+	const auto is_cancelled =
+		[&]()
+		{
+			return cancel_requested &&
+				   cancel_requested->load(
+					   std::memory_order_relaxed);
+		};
+
+	if (progress)
+	{
+		progress("Scanning project...");
+	}
 	std::vector<ReviewIssue> all_issues;
 
 	//1.Загружаем исходные файлы проекта
@@ -24,33 +38,45 @@ std::vector<ReviewIssue> CodeReviewAgent::analyze(
 	const auto files =
 		project_loader_.load(project_path);
 
-	std::cout
-		<< "Found "
-		<< files.size()
-		<< " source files.";
+	if (is_cancelled())
+		return {};
 
-	for (const auto& file : files)
+	if (progress)
 	{
+		progress(
+			"Found " +
+			std::to_string(files.size()) +
+			" source files.");
+	}
+
+	for (std::size_t file_index = 0;
+		file_index < files.size();
+		++file_index)
+	{
+		if (is_cancelled())
+			return {};
+
+		const auto& file = files[file_index];
+
 		auto chunks = chunker_.split(file);
 
-		std::cout
-			<< file.path
-			<< " -> chunks: "
-			<< chunks.size()
-			<< '\n';
+		if (progress)
+		{
+			progress(
+				"Analyzing " +
+				file.path.string() +
+				" (" +
+				std::to_string(file_index + 1) +
+				"/" +
+				std::to_string(files.size()) +
+				")");
+		}
 
 		//3. Обрабатываем каждый полученный chunk
 		for (const auto& chunk : chunks)
 		{
-
-			std::cout
-				<< "\n==================================\n"
-				<< "Analyzing: "
-				<< chunk.source_file
-				<< " chunk["
-				<< chunk.index
-				<< "]"
-				<< "\n==================================\n\n";
+			if (is_cancelled())
+				return {};
 
 			//4. Строим prompt
 			auto prompt = 
@@ -66,11 +92,6 @@ std::vector<ReviewIssue> CodeReviewAgent::analyze(
 				{
 					//6. Парсим ответ модели
 					auto review = result_parser_.parse(response);
-
-					std::cout
-						<< "Found issues: "
-						<< review.issues.size()
-						<< '\n';
 
 					for (auto& issue: review.issues)
 					{
@@ -99,6 +120,9 @@ std::vector<ReviewIssue> CodeReviewAgent::analyze(
 			}
 		}
 	}
+
+	if (is_cancelled())
+		return {};
 
 	return all_issues;
 }

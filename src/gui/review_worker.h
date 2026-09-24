@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QString>
 
+#include <atomic>
 #include <filesystem>
 #include <vector>
 
@@ -20,10 +21,13 @@ public:
 
 public slots:
 	void process();
+	void cancel();
 
 signals:
 	void finished(
 		const std::vector<ReviewIssue>& issues);
+
+	void cancelled();
 
 	void error(
 		const QString& message);
@@ -34,4 +38,6 @@ signals:
 private:
 	AgentConfig config_;
 	QString project_path_;
+
+	std::atomic_bool calcel_requested_{false};
 };

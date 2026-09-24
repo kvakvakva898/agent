@@ -16,6 +16,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QThread>
+#include <QProgressBar>
 
 #include <filesystem>
 #include <sstream>
@@ -28,7 +29,7 @@ MainWindow::MainWindow(
 	config_(std::move(config))
 {
 	setWindowTitle("Code Review Agent");
-	resize(1100, 700);
+	resize(600, 500);
 
 	auto* central_widget =
 		new QWidget(
@@ -61,6 +62,30 @@ MainWindow::MainWindow(
 			"Analyze project",
 			this);
 
+	cancel_button_ =
+		new QPushButton(
+			"Cancel",
+			this);
+
+	cancel_button_->setEnabled(false);
+
+	auto* progress_layout_ = new QBoxLayout(QBoxLayout::TopToBottom);
+
+	status_label_ =
+		new QLabel("Ready", this);
+
+	progress_bar_ =
+		new QProgressBar(this);
+
+	progress_bar_->setRange(0, 0);
+	progress_bar_->setVisible(false);
+
+	progress_layout_->addWidget(
+		progress_bar_);
+
+	progress_layout_->addWidget(
+		status_label_);
+
 	project_layout->addWidget(
 		project_path_edit_);
 
@@ -70,8 +95,14 @@ MainWindow::MainWindow(
 	project_layout->addWidget(
 		analyze_button_);
 
+	project_layout->addWidget(
+		cancel_button_);
+
 	main_layout->addLayout(
 		project_layout);
+
+	main_layout->addLayout(
+		progress_layout_);
 
 	issues_table_ =
 		new QTableWidget(
@@ -118,12 +149,6 @@ MainWindow::MainWindow(
 	main_layout->addWidget(
 		details_edit_);
 
-	status_label_ =
-		new QLabel("Ready", this);
-
-	main_layout->addWidget(
-		status_label_);
-
 	connect(
 		browse_button_,
 		&QPushButton::clicked,
@@ -135,6 +160,12 @@ MainWindow::MainWindow(
 		&QPushButton::clicked,
 		this,
 		&MainWindow::analyzeProject);
+
+	connect(
+		cancel_button_,
+		&QPushButton::clicked,
+		this,
+		&MainWindow::cancelAnalysis);
 
 	connect(
 		issues_table_,
@@ -174,6 +205,10 @@ void MainWindow::analyzeProject()
 
 		return;
 	}
+
+	progress_bar_->setVisible(true);
+
+	cancel_button_->setEnabled(true);
 
 	analyze_button_->setEnabled(false);
 
@@ -222,6 +257,12 @@ void MainWindow::analyzeProject()
 
 	connect(
 		review_worker_,
+		&ReviewWorker::cancelled,
+		this,
+		&MainWindow::onAnalysisCancelled);
+
+	connect(
+		review_worker_,
 		&ReviewWorker::finished,
 		review_thread_,
 		&QThread::quit);
@@ -229,6 +270,12 @@ void MainWindow::analyzeProject()
 	connect(
 		review_worker_,
 		&ReviewWorker::error,
+		review_thread_,
+		&QThread::quit);
+
+	connect(
+		review_worker_,
+		&ReviewWorker::cancelled,
 		review_thread_,
 		&QThread::quit);
 
@@ -263,6 +310,8 @@ void MainWindow::analyzeProject()
 void MainWindow::onAnalysisFinished(
 	const std::vector<ReviewIssue>& issues)
 {
+	progress_bar_->setVisible(false);
+
 	issues_ = issues;
 
 	displayIssues();
@@ -275,6 +324,8 @@ void MainWindow::onAnalysisFinished(
 void MainWindow::onAnalysisError(
 	const QString& message)
 {
+	progress_bar_->setVisible(false);
+
 	status_label_->setText(
 		"Analysis failed.");
 
@@ -282,6 +333,28 @@ void MainWindow::onAnalysisError(
 		this,
 		"Analysis failed",
 		message);
+}
+
+void MainWindow::onAnalysisCancelled()
+{
+	progress_bar_->setVisible(false);
+
+	status_label_->setText(
+		"Analysis cancelled.");
+
+	analyze_button_->setEnabled(true);
+	browse_button_->setEnabled(true);
+}
+
+void MainWindow::cancelAnalysis()
+{
+	if (!review_worker_)
+		return;
+
+	cancel_button_->setEnabled(false);
+
+	review_worker_->cancel();
+
 }
 
 void MainWindow::displayIssues()
