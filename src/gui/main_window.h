@@ -7,6 +7,7 @@
 
 #include "core/review_issue.h"
 #include "core/agent_config.h"
+#include "core/code_review_service.h"
 
 class QLineEdit;
 class QPushButton;
@@ -23,7 +24,7 @@ class MainWindow : public QMainWindow
 
 public:
 	MainWindow(
-		AgentConfig config,
+		CodeReviewService& review_agent,
 		QWidget* parent = nullptr);
 
 private slots:
@@ -48,7 +49,7 @@ private:
 	);
 
 private:
-	AgentConfig config_;
+	CodeReviewService& review_agent_;
 
 	std::vector<ReviewIssue> issues_;
 

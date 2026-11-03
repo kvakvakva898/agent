@@ -7,8 +7,9 @@
 #include <filesystem>
 #include <vector>
 
-#include <core/review_issue.h>
-#include <core/agent_config.h>
+#include "core/review_issue.h"
+#include "core/agent_config.h"
+#include "core/code_review_service.h"
 
 class ReviewWorker : public QObject
 {
@@ -16,7 +17,7 @@ class ReviewWorker : public QObject
 
 public:	
 	ReviewWorker(
-		const AgentConfig& config,
+		CodeReviewService& review_agent,
 		const QString& project_path);
 
 public slots:
@@ -36,7 +37,7 @@ signals:
 		const QString& message);
 
 private:
-	AgentConfig config_;
+	CodeReviewService& review_agent_;
 	QString project_path_;
 
 	std::atomic_bool calcel_requested_{false};

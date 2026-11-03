@@ -1,7 +1,8 @@
 #include <QApplication>
 
 #include "main_window.h"
-#include <core/agent_config.h>
+#include "core/agent_config.h"
+#include "app/application.h"
 
 int main(
 	int argc,
@@ -13,7 +14,7 @@ int main(
 	AgentConfig config;
 
 	config.endpoint 
-		= "http://10.108.91.115:1234/v1/chat/completions";
+		= "http://10.144.218.115:1234/v1/chat/completions";
 
 	config.model 
 		= "nvidia/nemotron-3-nano-4b";
@@ -25,7 +26,10 @@ int main(
 		std::vector<ReviewIssue>>(
 			"std::vector<ReviewIssue>");
 
-	MainWindow window(config);
+	Application application(config);
+
+	MainWindow window(
+		application.reviewAgent());
 
 	window.show();
 

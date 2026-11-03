@@ -1,6 +1,6 @@
 #include "main_window.h"
 
-#include "core/code_review_agent.h"
+#include "core/code_review_service.h"
 #include "core/agent_config.h"
 #include "review_worker.h"
 
@@ -23,10 +23,10 @@
 #include <thread>
 
 MainWindow::MainWindow(
-	AgentConfig config,
+	CodeReviewService& review_agent,
 	QWidget* parent):
 	QMainWindow(parent),
-	config_(std::move(config))
+	review_agent_(review_agent)
 {
 	setWindowTitle("Code Review Agent");
 	resize(600, 500);
@@ -222,7 +222,7 @@ void MainWindow::analyzeProject()
 
 	review_worker_ =
 		new ReviewWorker(
-			config_,
+			review_agent_,
 			path);
 
 	review_worker_->moveToThread(

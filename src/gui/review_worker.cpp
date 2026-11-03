@@ -1,14 +1,14 @@
 #include "review_worker.h"
 
-#include "core/code_review_agent.h"
+#include "core/code_review_service.h"
 
 #include <exception>
 #include <filesystem>
 
 ReviewWorker::ReviewWorker(
-	const AgentConfig& config,
+	CodeReviewService& review_agent,
 	const QString& project_path):
-	config_(config),
+	review_agent_(review_agent),
 	project_path_(project_path)
 {
 }
@@ -19,11 +19,8 @@ void ReviewWorker::process()
 	{
 		emit progress("Starting project analysis...");
 
-		CodeReviewAgent agent(
-			config_);
-
 		const auto issues =
-			agent.analyze(
+			review_agent_.analyze(
 				std::filesystem::path(
 					project_path_.toStdWString()),
 				[this](const std::string& message)

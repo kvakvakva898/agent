@@ -1,8 +1,8 @@
 #pragma once
 
-#include <filesystem>
-#include <vector>
-#include <functional>
+#include <string>
+
+#include "core/agent_config.h"
 
 #include "core/project_loader.h"
 #include "core/code_chunker.h"
@@ -10,31 +10,23 @@
 #include "core/llm_client.h"
 #include "core/review_result_parser.h"
 #include "core/prompt_template_loader.h"
-#include "agent_config.h"
+#include "core/code_review_service.h"
 
-class CodeReviewAgent
+class Application
 {
 public:
-
-	explicit CodeReviewAgent(
+	explicit Application(
 		const AgentConfig& config);
 
-	std::vector<ReviewIssue> analyze(
-		const std::filesystem::path& project_path,
-		std::function<void(const std::string&)> progress = {},
-		const std::atomic_bool* cancel_requested = nullptr);
+	CodeReviewService& reviewAgent();
 
 private:
 
-
-
 	ProjectLoader project_loader_;
-
 	CodeChunker chunker_;
-
 	PromptBuilder prompt_builder_;
-
 	LLMClient llm_client_;
-
 	ReviewResultParser result_parser_;
+
+	CodeReviewService review_agent_;
 };

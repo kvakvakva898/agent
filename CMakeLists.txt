@@ -38,7 +38,9 @@ add_library(
 
 	src/core/llm_client.cpp
 	src/core/review_result_parser.cpp
-	src/core/code_review_agent.cpp
+	src/core/code_review_service.cpp
+
+	src/app/application.cpp
 )
 
 target_include_directories(

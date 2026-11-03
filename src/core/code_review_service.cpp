@@ -1,20 +1,24 @@
-#include "core/code_review_agent.h"
+#include "core/code_review_service.h"
 
 #include <iostream>
 #include <stdexcept>
 
-CodeReviewAgent::CodeReviewAgent(
-	const AgentConfig& config)
-	: prompt_builder_(
-		PromptTemplateLoader{}.load(config.prompt_template_path)),
-	  llm_client_(
-		  config.endpoint,
-		  config.model)
+CodeReviewService::CodeReviewService(
+	ProjectLoader& project_loader,
+	CodeChunker& chunker,
+	PromptBuilder& prompt_builder,
+	LLMClient& llm_client,
+	ReviewResultParser& result_parser)
+	: project_loader_(project_loader),
+	  chunker_(chunker),
+	  prompt_builder_(prompt_builder),
+	  llm_client_(llm_client),
+	  result_parser_(result_parser)
 {
 }
 
 
-std::vector<ReviewIssue> CodeReviewAgent::analyze(
+std::vector<ReviewIssue> CodeReviewService::analyze(
 	const std::filesystem::path& project_path,
 	std::function<void(const std::string&)> progress,
 	const std::atomic_bool* cancel_requested)
@@ -79,45 +83,26 @@ std::vector<ReviewIssue> CodeReviewAgent::analyze(
 				return {};
 
 			//4. Строим prompt
-			auto prompt = 
+			auto prompt =
 				prompt_builder_.build(chunk);
 
-			try
+			//5. Отправляем prompt LLM
+			const auto response = llm_client_.chat(prompt);
+
+
+			//6. Парсим ответ модели
+			auto review = result_parser_.parse(response);
+
+			for (auto& issue : review.issues)
 			{
+				issue.source_file =
+					chunk.source_file;
 
-				//5. Отправляем prompt LLM
-				const auto response = llm_client_.chat(prompt);
-
-				try
-				{
-					//6. Парсим ответ модели
-					auto review = result_parser_.parse(response);
-
-					for (auto& issue: review.issues)
-					{
-						issue.source_file =
-							chunk.source_file;
-
-						all_issues.push_back(
-							std::move(issue)
-						);
-					}
-				}
-				catch (const std::exception& e)
-				{
-					std::cerr
-						<< "Failed to parse LLM response: "
-						<< e.what()
-						<< '\n';
-				}
+				all_issues.push_back(
+					std::move(issue)
+				);
 			}
-			catch (const std::exception& e)
-			{
-				std::cerr
-					<< "LLM request failed: "
-					<< e.what()
-					<< '\n';
-			}
+
 		}
 	}
 
