@@ -29,9 +29,9 @@ void ReviewWorker::process()
 						QString::fromStdString(message)
 					);
 				},
-				&calcel_requested_);
+				&cancel_requested_);
 
-		if (calcel_requested_.load(
+		if (cancel_requested_.load(
 			std::memory_order_relaxed))
 		{
 			emit cancelled();
@@ -58,7 +58,7 @@ void ReviewWorker::process()
 
 void ReviewWorker::cancel()
 {
-	calcel_requested_.store(
+	cancel_requested_.store(
 		true,
 		std::memory_order_relaxed);
 

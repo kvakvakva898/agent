@@ -4,6 +4,9 @@
 #include "core/agent_config.h"
 #include "review_worker.h"
 
+#include <QTabWidget>
+#include <QFormLayout>
+#include <QFileInfo>
 #include <QFileDialog>
 #include <QHeaderView>
 #include <QLabel>
@@ -23,27 +26,35 @@
 #include <thread>
 
 MainWindow::MainWindow(
-	CodeReviewService& review_agent,
+	Application& application,
 	QWidget* parent):
 	QMainWindow(parent),
-	review_agent_(review_agent)
+	application_(application)
 {
 	setWindowTitle("Code Review Agent");
 	resize(600, 500);
 
-	auto* central_widget =
-		new QWidget(
+	tabs_ =
+		new QTabWidget(
 			this);
 
 	setCentralWidget(
-		central_widget);
+		tabs_);
 
-	auto* main_layout =
-		new QVBoxLayout(
-			central_widget);
+	auto* review_tab =
+		new QWidget(this);
 
-	auto* project_layout =
-		new QHBoxLayout();
+	tabs_->addTab(review_tab, "Code review");
+
+	createSettingsTab();
+	loadSettingsToUi();
+
+		auto* main_layout =
+			new QVBoxLayout(
+				review_tab);
+
+		auto* project_layout =
+			new QHBoxLayout();
 
 	project_path_edit_ =
 		new QLineEdit(
@@ -222,7 +233,7 @@ void MainWindow::analyzeProject()
 
 	review_worker_ =
 		new ReviewWorker(
-			review_agent_,
+			application_.reviewService(),
 			path);
 
 	review_worker_->moveToThread(
@@ -305,6 +316,138 @@ void MainWindow::analyzeProject()
 		});
 
 	review_thread_->start();
+}
+
+void MainWindow::createSettingsTab()
+{
+	auto* settings_tab = new QWidget(this);
+	auto* layout = new QVBoxLayout(settings_tab);
+
+	auto* form = new QFormLayout();
+
+	endpoint_edit_ = new QLineEdit(settings_tab);
+	model_edit_ = new QLineEdit(settings_tab);
+	prompt_path_edit_ = new QLineEdit(settings_tab);
+
+	browse_prompt_button_ =
+		new QPushButton("Browse...", settings_tab);
+
+	auto* prompt_layout = new QHBoxLayout();
+
+	prompt_layout->addWidget(prompt_path_edit_);
+	prompt_layout->addWidget(browse_prompt_button_);
+
+	form->addRow("LLM endpoint:", endpoint_edit_);
+	form->addRow("Model:", model_edit_);
+	form->addRow("Prompt template:", prompt_layout);
+
+	save_settings_button_ =
+		new QPushButton("Save settings", settings_tab);
+
+	layout->addLayout(form);
+	layout->addWidget(save_settings_button_);
+	layout->addStretch();
+
+	tabs_->addTab(settings_tab, "Settings");
+
+	connect(
+		browse_prompt_button_,
+		&QPushButton::clicked,
+		this,
+		&MainWindow::browsePromptTemplate);
+
+	connect(
+		save_settings_button_,
+		&QPushButton::clicked,
+		this,
+		&MainWindow::saveSettings);
+}
+
+void MainWindow::loadSettingsToUi()
+{
+	const auto& config = application_.config();
+
+	endpoint_edit_->setText(
+		QString::fromStdString(config.endpoint));
+
+	model_edit_->setText(
+		QString::fromStdString(config.model));
+
+	prompt_path_edit_->setText(
+		QString::fromStdString(
+			config.prompt_template_path.string()));
+}
+
+void MainWindow::browsePromptTemplate()
+{
+	const QString path =
+		QFileDialog::getOpenFileName(
+			this,
+			"Select prompt template",
+			{},
+			"Text files (*.txt);;All files (*.*)");
+
+	if (!path.isEmpty())
+	{
+		prompt_path_edit_->setText(path);
+	}
+}
+
+void MainWindow::saveSettings()
+{
+	AgentConfig config;
+
+	config.endpoint =
+		endpoint_edit_->text().trimmed().toStdString();
+
+	config.model =
+		model_edit_->text().trimmed().toStdString();
+
+	config.prompt_template_path =
+		prompt_path_edit_->text().trimmed().toStdString();
+
+	if (config.endpoint.empty() ||
+		config.model.empty() ||
+		config.prompt_template_path.empty())
+	{
+		QMessageBox::warning(
+			this,
+			"Invalid settings",
+			"All settings fields must be filled.");
+
+		return;
+	}
+
+	if (!std::filesystem::exists(
+		config.prompt_template_path) ||
+		!std::filesystem::is_regular_file(
+			config.prompt_template_path))
+	{
+		QMessageBox::warning(
+			this,
+			"Invalid prompt template",
+			"Prompt template file does not exist.");
+
+		return;
+	}
+
+	try
+	{
+		application_.applyConfig(config);
+		application_.saveConfig();
+
+		QMessageBox::information(
+			this,
+			"Settings",
+			"Settings saved successfully.");
+	}
+	catch (const std::exception& e)
+	{
+		QMessageBox::critical(
+			this,
+			"Settings error",
+			QString::fromUtf8(e.what()));
+	}
 }
 
 void MainWindow::onAnalysisFinished(

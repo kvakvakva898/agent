@@ -7,8 +7,10 @@
 
 #include "core/review_issue.h"
 #include "core/agent_config.h"
-#include "core/code_review_service.h"
+#include "app/application.h"
 
+class QTabWidget;
+class QFormLayout;
 class QLineEdit;
 class QPushButton;
 class QTableWidget;
@@ -24,10 +26,12 @@ class MainWindow : public QMainWindow
 
 public:
 	MainWindow(
-		CodeReviewService& review_agent,
+		Application& application,
 		QWidget* parent = nullptr);
 
 private slots:
+	void browsePromptTemplate();
+	void saveSettings();
 	void browseProject();
 	void analyzeProject();
 	void showSelectedIssue();
@@ -42,6 +46,9 @@ private slots:
 	void onAnalysisCancelled();
 
 private:
+	void createSettingsTab();
+	void loadSettingsToUi();
+
 	void displayIssues();
 
 	void displayIssueDetails(
@@ -49,15 +56,22 @@ private:
 	);
 
 private:
-	CodeReviewService& review_agent_;
+	Application& application_;
 
 	std::vector<ReviewIssue> issues_;
+
+	QLineEdit* endpoint_edit_;
+	QLineEdit* model_edit_;
+	QLineEdit* prompt_path_edit_;
 
 	QLineEdit* project_path_edit_;
 	QPushButton* browse_button_;
 	QPushButton* analyze_button_;
 	QPushButton* cancel_button_;
+	QPushButton* browse_prompt_button_;
+	QPushButton* save_settings_button_;
 
+	QTabWidget* tabs_;
 	QTableWidget* issues_table_;
 	QTextEdit* details_edit_;
 	QProgressBar* progress_bar_;

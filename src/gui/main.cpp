@@ -1,7 +1,8 @@
 #include <QApplication>
+#include <QMessageBox>
 
 #include "main_window.h"
-#include "core/agent_config.h"
+#include "core/config_loader.h"
 #include "app/application.h"
 
 int main(
@@ -13,25 +14,42 @@ int main(
 		argv);
 	AgentConfig config;
 
-	config.endpoint 
-		= "http://10.144.218.115:1234/v1/chat/completions";
+	const auto config_path =
+		std::filesystem::path(
+			QApplication::applicationDirPath().toStdString())
+		/ "config.json";
 
-	config.model 
-		= "nvidia/nemotron-3-nano-4b";
+	try
+	{
+		if (std::filesystem::exists(config_path))
+		{
+			ConfigLoader loader;
+			config = loader.load(config_path);
+		}
+		else
+		{
+			config.prompt_template_path =
+				std::filesystem::path(
+					QApplication::applicationDirPath().toStdString())
+				/ "prompts"
+				/ "code_review.txt";
+		}
 
-	config.prompt_template_path 
-		= "prompts/code_review.txt";
+		Application application(config, config_path);
 
-	qRegisterMetaType<
-		std::vector<ReviewIssue>>(
-			"std::vector<ReviewIssue>");
+		MainWindow window(application);
+		
+		window.show();
 
-	Application application(config);
+		return app.exec();
+	}
+	catch (const std::exception& e)
+	{
+		QMessageBox::critical(
+			nullptr,
+			"Application error",
+			QString::fromUtf8(e.what()));
 
-	MainWindow window(
-		application.reviewAgent());
-
-	window.show();
-
-	return app.exec();
+		return 1;
+	}
 }

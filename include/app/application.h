@@ -1,32 +1,34 @@
 #pragma once
 
-#include <string>
+#include <filesystem>
+#include <memory>
 
 #include "core/agent_config.h"
 
-#include "core/project_loader.h"
-#include "core/code_chunker.h"
-#include "core/prompt_builder.h"
-#include "core/llm_client.h"
-#include "core/review_result_parser.h"
-#include "core/prompt_template_loader.h"
-#include "core/code_review_service.h"
+class CodeReviewService;
 
 class Application
 {
 public:
-	explicit Application(
-		const AgentConfig& config);
+	Application(
+		const AgentConfig& config,
+		const std::filesystem::path& config_path);
 
-	CodeReviewService& reviewAgent();
+	~Application();
+
+	CodeReviewService& reviewService();
+
+	const AgentConfig& config() const;
+
+	void applyConfig(const AgentConfig& config);
+
+	void saveConfig() const;
 
 private:
+	struct Runtime;
 
-	ProjectLoader project_loader_;
-	CodeChunker chunker_;
-	PromptBuilder prompt_builder_;
-	LLMClient llm_client_;
-	ReviewResultParser result_parser_;
+	std::unique_ptr<Runtime> runtime_;
 
-	CodeReviewService review_agent_;
+	AgentConfig config_;
+	std::filesystem::path config_path_;
 };

@@ -3,14 +3,14 @@
 #include <filesystem>
 #include <vector>
 #include <functional>
+#include <string>
+#include <atomic>
 
 #include "core/project_loader.h"
 #include "core/code_chunker.h"
 #include "core/prompt_builder.h"
 #include "core/llm_client.h"
 #include "core/review_result_parser.h"
-#include "core/prompt_template_loader.h"
-#include "agent_config.h"
 
 class CodeReviewService
 {

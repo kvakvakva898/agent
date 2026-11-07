@@ -40,5 +40,5 @@ private:
 	CodeReviewService& review_agent_;
 	QString project_path_;
 
-	std::atomic_bool calcel_requested_{false};
+	std::atomic_bool cancel_requested_{false};
 };
