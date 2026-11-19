@@ -44,14 +44,29 @@ Application::Application(
 	: config_(config),
 	  config_path_(config_path)
 {
-	runtime_ = std::make_shared<Runtime>(config_);
+	try
+	{
+		runtime_ = std::make_shared<Runtime>(config_);
+	}
+	catch (const std::exception& e)
+	{
+		runtime_ = nullptr;
+		startup_error_ = e.what();
+	}
 }
+
+bool Application::isReady() const { return runtime_ != nullptr; }
+
+const std::string& Application::startupError() const { return startup_error_; }
 
 Application::~Application() = default;
 
 std::shared_ptr<CodeReviewService>
 Application::reviewServiceHandle() const
 {
+	if (!runtime_)
+		throw std::runtime_error("Application is not ready: " + startup_error_);
+
 	return std::shared_ptr<CodeReviewService>(
 		runtime_,
 		&runtime_->review_service);
@@ -69,6 +84,7 @@ void Application::applyConfig(const AgentConfig& config)
 
 	runtime_ = std::move(new_runtime);
 	config_ = config;
+	startup_error_.clear();
 }
 
 void Application::saveConfig() const

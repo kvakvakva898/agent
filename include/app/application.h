@@ -20,14 +20,17 @@ public:
 
 	const AgentConfig& config() const;
 
-	void applyConfig(const AgentConfig& config);
+	bool isReady() const;
+	const std::string& startupError() const;
 
+	void applyConfig(const AgentConfig& config);
 	void saveConfig() const;
 
 private:
 	struct Runtime;
-
 	std::shared_ptr<Runtime> runtime_;
+
+	std::string startup_error_;
 
 	AgentConfig config_;
 	std::filesystem::path config_path_;

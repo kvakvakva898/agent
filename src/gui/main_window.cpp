@@ -184,6 +184,15 @@ MainWindow::MainWindow(
 		&QTableWidget::itemSelectionChanged,
 		this,
 		&MainWindow::showSelectedIssue);
+
+	if (!application_.isReady())
+	{
+		status_label_->setText(
+			QString("Configuration error: %1 - fix in settings.")
+				.arg(QString::fromStdString(application_.startupError())));
+
+		analyze_button_->setEnabled(false);
+	}
 }
 
 MainWindow::~MainWindow()
@@ -354,6 +363,13 @@ void MainWindow::analyzeProject()
 			cancel_button_->setEnabled(false);
 		});
 
+	if (!application_.isReady())
+	{
+		QMessageBox::warning(this, "Not configured",
+			QString::fromStdString(application_.startupError()));
+		return;
+	}
+
 	review_thread_->start();
 }
 
@@ -474,6 +490,9 @@ void MainWindow::saveSettings()
 	{
 		application_.applyConfig(config);
 		application_.saveConfig();
+
+		analyze_button_->setEnabled(true);
+		status_label_->setText("Ready");
 
 		QMessageBox::information(
 			this,
