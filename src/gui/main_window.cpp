@@ -20,6 +20,7 @@
 #include <QHBoxLayout>
 #include <QThread>
 #include <QProgressBar>
+#include <QCloseEvent>
 
 #include <filesystem>
 #include <sstream>
@@ -185,6 +186,37 @@ MainWindow::MainWindow(
 		&MainWindow::showSelectedIssue);
 }
 
+MainWindow::~MainWindow()
+{
+	if (review_thread_ && review_thread_->isRunning())
+	{
+		if (review_worker_)
+			review_worker_->cancel();
+
+		review_thread_->quit();
+		review_thread_->wait();
+	}
+}
+
+void MainWindow::closeEvent(QCloseEvent* event)
+{
+	if (review_thread_ && review_thread_->isRunning())
+	{
+		closing_requested_ = true;
+		
+		cancel_button_->setEnabled(false);
+		status_label_->setText("Stopping analysis...");
+
+		if (review_worker_)
+			review_worker_->cancel();
+
+		event->ignore();
+		return;
+	}
+
+	event->accept();
+}
+
 void MainWindow::browseProject()
 {
 	const QString directory =
@@ -201,7 +233,7 @@ void MainWindow::browseProject()
 
 void MainWindow::analyzeProject()
 {
-	if (review_thread_ && review_thread_->isRunning())
+	if (review_thread_)
 		return;
 
 	const QString path =
@@ -233,7 +265,7 @@ void MainWindow::analyzeProject()
 
 	review_worker_ =
 		new ReviewWorker(
-			application_.reviewService(),
+			application_.reviewServiceHandle(),
 			path);
 
 	review_worker_->moveToThread(
@@ -311,8 +343,15 @@ void MainWindow::analyzeProject()
 			review_thread_ = nullptr;
 			review_worker_ = nullptr;
 
+			if (closing_requested_)
+			{
+				close();
+				return;
+			}
+
 			analyze_button_->setEnabled(true);
 			browse_button_->setEnabled(true);
+			cancel_button_->setEnabled(false);
 		});
 
 	review_thread_->start();
@@ -468,6 +507,9 @@ void MainWindow::onAnalysisError(
 	const QString& message)
 {
 	progress_bar_->setVisible(false);
+
+	if (closing_requested_)
+		return;
 
 	status_label_->setText(
 		"Analysis failed.");

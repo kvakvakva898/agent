@@ -2,6 +2,17 @@
 
 #include <string>
 #include <filesystem>
+#include <atomic>
+#include <stdexcept>
+
+class RequestCancelled : public std::runtime_error
+{
+public:
+	RequestCancelled()
+		: std::runtime_error("Request cancelled")
+	{
+	}
+};
 
 class LLMClient
 {
@@ -12,7 +23,8 @@ public:
 	);
 	
 	std::string chat(
-		const std::string& prompt
+		const std::string& prompt,
+		const std::atomic_bool* cancel_requested_ = nullptr
 	);
 
 private:

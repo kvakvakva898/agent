@@ -16,7 +16,7 @@ public:
 
 	~Application();
 
-	CodeReviewService& reviewService();
+	std::shared_ptr<CodeReviewService> reviewServiceHandle() const;
 
 	const AgentConfig& config() const;
 
@@ -27,7 +27,7 @@ public:
 private:
 	struct Runtime;
 
-	std::unique_ptr<Runtime> runtime_;
+	std::shared_ptr<Runtime> runtime_;
 
 	AgentConfig config_;
 	std::filesystem::path config_path_;

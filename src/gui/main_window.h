@@ -19,15 +19,21 @@ class QLabel;
 class QThread;
 class ReviewWorker;
 class QProgressBar;
+class QCloseEvent;
 
 class MainWindow : public QMainWindow
 {
 	Q_OBJECT
 
+protected:
+	void closeEvent(QCloseEvent* event) override;
+
 public:
 	MainWindow(
 		Application& application,
 		QWidget* parent = nullptr);
+
+	~MainWindow();
 
 private slots:
 	void browsePromptTemplate();
@@ -59,6 +65,7 @@ private:
 	Application& application_;
 
 	std::vector<ReviewIssue> issues_;
+	bool closing_requested_ = false;
 
 	QLineEdit* endpoint_edit_;
 	QLineEdit* model_edit_;

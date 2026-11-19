@@ -6,6 +6,7 @@
 #include <atomic>
 #include <filesystem>
 #include <vector>
+#include <memory>
 
 #include "core/review_issue.h"
 #include "core/agent_config.h"
@@ -17,7 +18,7 @@ class ReviewWorker : public QObject
 
 public:	
 	ReviewWorker(
-		CodeReviewService& review_agent,
+		std::shared_ptr<CodeReviewService> review_agent,
 		const QString& project_path);
 
 public slots:
@@ -37,7 +38,7 @@ signals:
 		const QString& message);
 
 private:
-	CodeReviewService& review_agent_;
+	std::shared_ptr<CodeReviewService> review_agent_;
 	QString project_path_;
 
 	std::atomic_bool cancel_requested_{false};

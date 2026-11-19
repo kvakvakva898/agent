@@ -21,7 +21,7 @@ struct Application::Runtime
 
 	CodeReviewService review_service;
 
-	explicit Runtime(const AgentConfig config)
+	explicit Runtime(const AgentConfig& config)
 		: prompt_builder(
 			PromptTemplateLoader{}.load(
 				config.prompt_template_path)),
@@ -44,14 +44,17 @@ Application::Application(
 	: config_(config),
 	  config_path_(config_path)
 {
-	runtime_ = std::make_unique<Runtime>(config_);
+	runtime_ = std::make_shared<Runtime>(config_);
 }
 
 Application::~Application() = default;
 
-CodeReviewService& Application::reviewService()
+std::shared_ptr<CodeReviewService>
+Application::reviewServiceHandle() const
 {
-	return runtime_->review_service;
+	return std::shared_ptr<CodeReviewService>(
+		runtime_,
+		&runtime_->review_service);
 }
 
 const AgentConfig& Application::config() const
@@ -62,7 +65,7 @@ const AgentConfig& Application::config() const
 void Application::applyConfig(const AgentConfig& config)
 {
 	auto new_runtime =
-		std::make_unique<Runtime>(config);
+		std::make_shared<Runtime>(config);
 
 	runtime_ = std::move(new_runtime);
 	config_ = config;

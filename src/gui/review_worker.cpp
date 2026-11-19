@@ -6,9 +6,9 @@
 #include <filesystem>
 
 ReviewWorker::ReviewWorker(
-	CodeReviewService& review_agent,
+	std::shared_ptr<CodeReviewService> review_agent,
 	const QString& project_path):
-	review_agent_(review_agent),
+	review_agent_(std::move(review_agent)),
 	project_path_(project_path)
 {
 }
@@ -20,7 +20,7 @@ void ReviewWorker::process()
 		emit progress("Starting project analysis...");
 
 		const auto issues =
-			review_agent_.analyze(
+			review_agent_->analyze(
 				std::filesystem::path(
 					project_path_.toStdWString()),
 				[this](const std::string& message)
@@ -44,6 +44,10 @@ void ReviewWorker::process()
 		emit finished(
 			issues);
 	}
+	catch (const RequestCancelled&)
+	{
+		emit cancelled();
+	}
 	catch (const std::exception& e)
 	{
 		emit error(
@@ -61,7 +65,4 @@ void ReviewWorker::cancel()
 	cancel_requested_.store(
 		true,
 		std::memory_order_relaxed);
-
-	emit progress(
-		"Stopping analysis...");
 }

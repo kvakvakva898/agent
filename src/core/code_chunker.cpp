@@ -1,6 +1,7 @@
 #include "core/code_chunker.h"
 
 #include <sstream>
+#include <vector>
 
 std::vector<CodeChunk> CodeChunker::split(const SourceFile& file)
 {

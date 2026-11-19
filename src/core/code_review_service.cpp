@@ -87,7 +87,9 @@ std::vector<ReviewIssue> CodeReviewService::analyze(
 				prompt_builder_.build(chunk);
 
 			//5. Отправляем prompt LLM
-			const auto response = llm_client_.chat(prompt);
+			const auto response = llm_client_.chat(
+				prompt,
+				cancel_requested);
 
 
 			//6. Парсим ответ модели
