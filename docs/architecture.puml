@@ -1,0 +1,227 @@
+@startuml
+' Qt types (QMainWindow, QObject, QThread, QString, QWidget, QLineEdit,
+' QPushButton, QTableWidget, QTextEdit, QLabel, QProgressBar, QTabWidget,
+' QFormLayout, QCloseEvent, etc.) are omitted as external dependencies.
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+package "core" {
+
+  struct AgentConfig {
+    + endpoint : string
+    + model : string
+    + prompt_template_path : path
+  }
+
+  struct SourceFile {
+    + path : path
+    + content : string
+  }
+
+  struct CodeChunk {
+    + source_file : path
+    + index : size_t
+    + start_line : size_t
+    + content : string
+  }
+
+  struct ReviewIssue {
+    + source_file : path
+    + severity : string
+    + category : string
+    + line : size_t
+    + confidence : double
+    + description : string
+    + recommendation : string
+  }
+
+  struct ReviewResult {
+    + issues : vector<ReviewIssue>
+  }
+
+  class CodeChunker {
+    - {static} MAX_LINES : size_t = 200
+    + split(file : SourceFile) : vector<CodeChunk>
+  }
+
+  class CodeReviewService {
+    - project_loader_ : ProjectLoader&
+    - chunker_ : CodeChunker&
+    - prompt_builder_ : PromptBuilder&
+    - llm_client_ : LLMClient&
+    - result_parser_ : ReviewResultParser&
+    + CodeReviewService(ProjectLoader&, CodeChunker&, PromptBuilder&, LLMClient&, ReviewResultParser&)
+    + analyze(project_path : path, progress : callback, cancel_requested : const atomic_bool*) : vector<ReviewIssue>
+  }
+
+  class ConfigLoader {
+    + load(path : path) : AgentConfig
+    + save(config : AgentConfig, path : path) : void
+  }
+
+  class FileReader {
+    + read(path : string) : string
+  }
+
+  class FileScanner {
+    + scan(root : path) : vector<string>
+    - is_code_file(path : path) : bool
+    - should_skip_dir(name : string) : bool
+  }
+
+  class LLMClient {
+    - endpoint_ : string
+    - model_ : string
+    + LLMClient(endpoint : string, model : string)
+    + chat(prompt : string, cancel_requested_ : const atomic_bool*) : string
+  }
+
+  class RequestCancelled {
+    + RequestCancelled()
+  }
+
+  class ProjectLoader {
+    + load(path : path) : vector<SourceFile>
+  }
+
+  class PromptBuilder {
+    - prompt_template_ : string
+    + PromptBuilder(prompt_template : string)
+    + build(chunk : CodeChunk) : string
+  }
+
+  class PromptTemplateLoader {
+    + load(path : path) : string
+  }
+
+  class ReviewResultParser {
+    + parse(response : string) : ReviewResult
+  }
+}
+
+package "app" {
+
+  class Application {
+    - runtime_ : shared_ptr<Runtime>
+    - startup_error_ : string
+    - config_ : AgentConfig
+    - config_path_ : path
+    + Application(config : AgentConfig, config_path : path)
+    + ~Application()
+    + reviewServiceHandle() : shared_ptr<CodeReviewService>
+    + config() : const AgentConfig&
+    + isReady() : bool
+    + startupError() : const string&
+    + applyConfig(config : AgentConfig) : void
+    + saveConfig() : void
+  }
+
+  class "Application::Runtime" as Runtime <<nested>> {
+    + project_loader : ProjectLoader
+    + chunker : CodeChunker
+    + prompt_builder : PromptBuilder
+    + llm_client : LLMClient
+    + result_parser : ReviewResultParser
+    + review_service : CodeReviewService
+    + Runtime(config : AgentConfig)
+  }
+}
+
+package "ui" {
+
+  class MainWindow {
+    - application_ : Application&
+    - issues_ : vector<ReviewIssue>
+    - closing_requested_ : bool
+    - review_worker_ : ReviewWorker*
+    + MainWindow(application : Application&)
+    + ~MainWindow()
+    + closeEvent(event)
+    + browsePromptTemplate()
+    + saveSettings()
+    + browseProject()
+    + analyzeProject()
+    + showSelectedIssue()
+    + cancelAnalysis()
+    + onAnalysisFinished(issues : const vector<ReviewIssue>&)
+    + onAnalysisError(message)
+    + onAnalysisCancelled()
+    - createSettingsTab()
+    - loadSettingsToUi()
+    - displayIssues()
+    - displayIssueDetails(issue : const ReviewIssue&)
+  }
+
+  class ReviewWorker {
+    - review_agent_ : shared_ptr<CodeReviewService>
+    - project_path_ : string
+    - cancel_requested_ : atomic_bool
+    + ReviewWorker(review_agent : shared_ptr<CodeReviewService>, project_path : string)
+    + process()
+    + cancel()
+    + finished(issues : const vector<ReviewIssue>&)
+    + cancelled()
+    + error(message)
+    + progress(message)
+  }
+}
+
+package "main" {
+  class CurlGlobalGuard <<anonymous>> {
+    + CurlGlobalGuard()
+    + ~CurlGlobalGuard()
+  }
+}
+
+' ---------- composition / ownership ----------
+Application *-- Runtime
+Runtime *-- ProjectLoader
+Runtime *-- CodeChunker
+Runtime *-- PromptBuilder
+Runtime *-- LLMClient
+Runtime *-- ReviewResultParser
+Runtime *-- CodeReviewService
+
+Application *-- AgentConfig : config_
+ReviewResult *-- ReviewIssue : issues
+
+MainWindow --> ReviewWorker : owns
+MainWindow --> Application : uses
+
+' ---------- dependencies / associations ----------
+Application ..> CodeReviewService : reviewServiceHandle()
+Application ..> ConfigLoader : uses
+
+Runtime ..> PromptTemplateLoader : uses
+
+CodeReviewService --> ProjectLoader : uses
+CodeReviewService --> CodeChunker : uses
+CodeReviewService --> PromptBuilder : uses
+CodeReviewService --> LLMClient : uses
+CodeReviewService --> ReviewResultParser : uses
+CodeReviewService ..> CodeChunk : processes
+CodeReviewService ..> ReviewIssue : returns
+
+ProjectLoader ..> FileScanner : uses
+ProjectLoader ..> FileReader : uses
+ProjectLoader ..> SourceFile : creates
+
+CodeChunker ..> SourceFile : uses
+CodeChunker ..> CodeChunk : creates
+
+PromptBuilder ..> CodeChunk : uses
+
+ReviewResultParser ..> ReviewResult : creates
+
+ConfigLoader ..> AgentConfig : loads/saves
+
+LLMClient ..> RequestCancelled : throws
+
+MainWindow ..> ReviewIssue : displays
+ReviewWorker --> CodeReviewService : uses
+ReviewWorker ..> ReviewIssue : emits
+ReviewWorker ..> RequestCancelled : catches
+
+@enduml

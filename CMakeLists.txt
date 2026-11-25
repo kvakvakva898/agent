@@ -83,9 +83,9 @@
 		agent-gui
 
 		src/gui/main.cpp
-		src/gui/main_window.h
+		include/gui/main_window.h
 		src/gui/main_window.cpp
-		src/gui/review_worker.h
+		include/gui/review_worker.h
 		src/gui/review_worker.cpp
 	)
 

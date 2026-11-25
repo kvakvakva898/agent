@@ -3,7 +3,7 @@
 
 #include "curl/curl.h"
 
-#include "main_window.h"
+#include "gui/main_window.h"
 #include "core/config_loader.h"
 #include "app/application.h"
 

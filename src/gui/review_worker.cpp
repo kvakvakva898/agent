@@ -1,4 +1,4 @@
-#include "review_worker.h"
+#include "gui/review_worker.h"
 
 #include "core/code_review_service.h"
 

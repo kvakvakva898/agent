@@ -1,8 +1,8 @@
-#include "main_window.h"
+#include "gui/main_window.h"
 
 #include "core/code_review_service.h"
 #include "core/agent_config.h"
-#include "review_worker.h"
+#include "gui/review_worker.h"
 
 #include <QTabWidget>
 #include <QFormLayout>
